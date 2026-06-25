@@ -1,77 +1,46 @@
 (function () {
     const bonzis = document.querySelectorAll('.bonzi');
-    if (bonzis.length === 0) {
-        console.error("No elements with class '.bonzi' were found on the page!");
-        return;
-    }
+    if (!bonzis.length) return;
 
-    // 1. Initialize the party music
-    const audio = new Audio("https://files.catbox.moe/m4cdq8.mp3");
-    audio.loop = false;
-    
+    let audio = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_115b9b6d6c.mp3?filename=fun-party-110659.mp3");
+    audio.loop = true;
+    audio.preload = "auto";
+    audio.volume = 1;
+
     let running = false;
     let start;
     let lastBeatIndex = -1;
 
-    // 103 BPM Rhythm Calculations
     const bpm = 103;
-    const bps = bpm / 60; 
-    const freq = bps * Math.PI * 2; 
+    const bps = bpm / 60;
+    const freq = bps * Math.PI * 2;
 
-    // Core Animation Loop
     function loop(t) {
         if (!running) return;
         if (!start) start = t;
 
         const elapsed = (t - start) / 1000;
+        if (elapsed >= 10) return reset();
 
-        // Stop after 10 seconds
-        if (elapsed >= 10) {
-            reset();
-            return;
-        }
-
-        // Beat tracking for confetti
-        const currentBeatIndex = Math.floor(elapsed * bps);
-        if (currentBeatIndex > lastBeatIndex) {
-            lastBeatIndex = currentBeatIndex;
-            
-            // Safe call: Only fire confetti if party.js successfully loaded
+        const beat = Math.floor(elapsed * bps);
+        if (beat > lastBeatIndex) {
+            lastBeatIndex = beat;
             if (window.party) {
-                try {
-                    window.party.confetti({ x: window.innerWidth * 0.2, y: window.innerHeight }, {
-                        count: window.party.variation.range(20, 30),
-                        angle: window.party.variation.range(-75, -45),
-                        spread: 30
-                    });
-                    window.party.confetti({ x: window.innerWidth * 0.8, y: window.innerHeight }, {
-                        count: window.party.variation.range(20, 30),
-                        angle: window.party.variation.range(-135, -105),
-                        spread: 30
-                    });
-                } catch (e) {
-                    console.warn("Party.js failed to fire:", e);
-                }
+                window.party.confetti({ x: innerWidth * 0.2, y: innerHeight }, { count: 25, angle: -60, spread: 30 });
+                window.party.confetti({ x: innerWidth * 0.8, y: innerHeight }, { count: 25, angle: -120, spread: 30 });
             }
         }
 
-        // Jelly Dancing Mechanics
         bonzis.forEach((b, i) => {
-            const offset = i * 0.5;
-            const phase = (elapsed * freq) + offset;
-
-            const bounceHeight = 35; 
-            const bounce = Math.abs(Math.sin(phase)) * -bounceHeight;
+            const phase = elapsed * freq + i * 0.5;
+            const bounce = Math.abs(Math.sin(phase)) * -35;
             const sway = Math.sin(phase) * 25;
+            const s = Math.cos(phase * 2) * 0.2;
 
-            const squishFactor = Math.cos(phase * 2) * 0.2;
-            const scaleX = 1 - squishFactor;
-            const scaleY = 1 + squishFactor;
-            const skewX = Math.cos(phase) * 10;
-
-            b.style.transform = `translate(${sway}px, ${bounce}px) scaleX(${scaleX}) scaleY(${scaleY}) skewX(${skewX}deg)`;
-            b.style.filter = "brightness(1) contrast(120%)";
+            b.style.transform =
+                `translate(${sway}px,${bounce}px) scaleX(${1 - s}) scaleY(${1 + s}) skewX(${Math.cos(phase) * 10}deg)`;
             b.style.transformOrigin = "bottom center";
+            b.style.filter = "brightness(1) contrast(120%)";
         });
 
         requestAnimationFrame(loop);
@@ -79,55 +48,32 @@
 
     function reset() {
         running = false;
-        
-        // Pause audio and reset its time point
         audio.pause();
         audio.currentTime = 0;
-
         bonzis.forEach(b => {
             b.style.transform = "";
             b.style.filter = "";
             b.style.transformOrigin = "";
         });
-        console.log("Party over!");
     }
 
-    // Function to safely start both audio AND animation together
     function startParty() {
-        if (running) return; // Prevent double-triggering
+        if (running) return;
         running = true;
-        start = null; // Reset start time for animation sync
+        start = null;
         lastBeatIndex = -1;
-        
-        audio.play().catch(err => {
-            console.error("Audio playback failed completely:", err);
-        });
-        
+        audio.play().catch(() => {});
         requestAnimationFrame(loop);
     }
 
-    // Attempt to play immediately
-    audio.play()
-        .then(() => {
-            // Autoplay allowed! Start the party immediately.
-            startParty();
-        })
-        .catch(err => {
-            console.warn("Autoplay blocked. Click anywhere on the page to start the music and animation!");
-            
-            // Fallback: Wait for the first user click to trigger everything in sync
-            const startOnInteraction = () => {
-                startParty();
-                document.removeEventListener('click', startOnInteraction);
-            };
-            document.addEventListener('click', startOnInteraction);
-        });
+    document.addEventListener("click", () => {
+        startParty();
+        audio.play().catch(() => {});
+    }, { once: true });
 
-    // Load Party.js dynamically
     if (!window.party) {
-        const script = document.createElement('script');
-        script.src = "https://cdn.jsdelivr.net/npm/party-js@2/bundle/party.min.js";
-        script.onerror = () => console.warn("Confetti CDN blocked or failed to load. Running dance/audio only.");
-        document.head.appendChild(script);
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/party-js@2/bundle/party.min.js";
+        document.head.appendChild(s);
     }
 })();
