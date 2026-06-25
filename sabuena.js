@@ -5,18 +5,23 @@
         return;
     }
 
-    const start = performance.now();
-    let running = true;
+    // 1. Initialize the party music
+    const audio = new Audio("https://files.catbox.moe/m4cdq8.mp3");
+    audio.loop = false;
+    
+    let running = false;
+    let start;
+    let lastBeatIndex = -1;
 
     // 103 BPM Rhythm Calculations
     const bpm = 103;
     const bps = bpm / 60; 
     const freq = bps * Math.PI * 2; 
-    let lastBeatIndex = -1;
 
     // Core Animation Loop
     function loop(t) {
         if (!running) return;
+        if (!start) start = t;
 
         const elapsed = (t - start) / 1000;
 
@@ -34,14 +39,14 @@
             // Safe call: Only fire confetti if party.js successfully loaded
             if (window.party) {
                 try {
-                    party.confetti({ x: window.innerWidth * 0.2, y: window.innerHeight }, {
-                        count: party.variation.range(20, 30),
-                        angle: party.variation.range(-75, -45),
+                    window.party.confetti({ x: window.innerWidth * 0.2, y: window.innerHeight }, {
+                        count: window.party.variation.range(20, 30),
+                        angle: window.party.variation.range(-75, -45),
                         spread: 30
                     });
-                    party.confetti({ x: window.innerWidth * 0.8, y: window.innerHeight }, {
-                        count: party.variation.range(20, 30),
-                        angle: party.variation.range(-135, -105),
+                    window.party.confetti({ x: window.innerWidth * 0.8, y: window.innerHeight }, {
+                        count: window.party.variation.range(20, 30),
+                        angle: window.party.variation.range(-135, -105),
                         spread: 30
                     });
                 } catch (e) {
@@ -74,22 +79,55 @@
 
     function reset() {
         running = false;
+        
+        // Pause audio and reset its time point
+        audio.pause();
+        audio.currentTime = 0;
+
         bonzis.forEach(b => {
             b.style.transform = "";
             b.style.filter = "";
             b.style.transformOrigin = "";
         });
-        console.log("Animation complete.");
+        console.log("Party over!");
     }
 
-    // Load Party.js dynamically, but start the animation immediately anyway
+    // Function to safely start both audio AND animation together
+    function startParty() {
+        if (running) return; // Prevent double-triggering
+        running = true;
+        start = null; // Reset start time for animation sync
+        lastBeatIndex = -1;
+        
+        audio.play().catch(err => {
+            console.error("Audio playback failed completely:", err);
+        });
+        
+        requestAnimationFrame(loop);
+    }
+
+    // Attempt to play immediately
+    audio.play()
+        .then(() => {
+            // Autoplay allowed! Start the party immediately.
+            startParty();
+        })
+        .catch(err => {
+            console.warn("Autoplay blocked. Click anywhere on the page to start the music and animation!");
+            
+            // Fallback: Wait for the first user click to trigger everything in sync
+            const startOnInteraction = () => {
+                startParty();
+                document.removeEventListener('click', startOnInteraction);
+            };
+            document.addEventListener('click', startOnInteraction);
+        });
+
+    // Load Party.js dynamically
     if (!window.party) {
         const script = document.createElement('script');
         script.src = "https://cdn.jsdelivr.net/npm/party-js@2/bundle/party.min.js";
-        script.onerror = () => console.warn("Confetti CDN blocked or failed to load. Running dance only.");
+        script.onerror = () => console.warn("Confetti CDN blocked or failed to load. Running dance/audio only.");
         document.head.appendChild(script);
     }
-
-    // Fire it up!
-    requestAnimationFrame(loop);
 })();
