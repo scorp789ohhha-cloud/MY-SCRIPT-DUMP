@@ -19,13 +19,6 @@ animation:pineappleSlam 0.15s ease-in-out;
 }
 .screen-shake{
 animation:screenShake 0.08s linear infinite;
-}
-@keyframes trailFade{
-0%{opacity:0.7;}
-100%{opacity:0;}
-}
-.blue-trail{
-animation:trailFade 0.25s ease-out forwards;
 }`;
 document.head.appendChild(style);
 
@@ -80,31 +73,6 @@ document.body.appendChild(clone);
 setTimeout(()=>{
 clone.remove();
 },500);
-}
-
-
-function spawnTrail(){
-
-const trail=document.createElement("div");
-trail.className="blue-trail";
-trail.style.position="fixed";
-trail.style.width="250px";
-trail.style.height="250px";
-trail.style.left=pineapple.style.left;
-trail.style.top=pineapple.style.top;
-trail.style.backgroundImage=pineapple.style.backgroundImage;
-trail.style.backgroundSize="contain";
-trail.style.backgroundRepeat="no-repeat";
-trail.style.backgroundPosition="center";
-trail.style.zIndex="9999998";
-trail.style.pointerEvents="none";
-trail.style.filter="brightness(0) saturate(100%) invert(38%) sepia(93%) saturate(2000%) hue-rotate(200deg)";
-document.body.appendChild(trail);
-
-setTimeout(()=>{
-trail.remove();
-},260);
-
 }
 
 
@@ -393,16 +361,7 @@ pineapple.style.left=targetX+"px";
 pineapple.style.top=targetY+"px";
 
 
-const trailInterval=setInterval(()=>{
-spawnTrail();
-},40);
-
-
-
 setTimeout(()=>{
-
-clearInterval(trailInterval);
-
 
 const hitAudio=new Audio(
 "https://files.catbox.moe/1iz879.mp3"
