@@ -1,143 +1,193 @@
-(function() {
-    // 1. Create and configure the Audio object
-    const audio = new Audio('https://files.catbox.moe/kpcq8g.wav');
-    audio.crossOrigin = "anonymous";
+(function(){
+for (let bonzi of bonzis.values()) {
+    if (bonzi.userPublic.name !== "DarlloGuy") continue;
 
-    // 2. Create and style the canvas dynamically
-    const canvas = document.createElement('canvas');
-    canvas.width = 1000; 
-    canvas.height = 1000;
-    Object.assign(canvas.style, {
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: '99999',
-        pointerEvents: 'none'
-    });
-    document.body.appendChild(canvas);
+    const el = bonzi.element;
+    const originalTransform = el.style.transform;
+    const originalTransformOrigin = el.style.transformOrigin;
+    const originalFilter = el.style.filter;
+    const originalHatDisplay = bonzi.hatLayer.style.display;
+    const originalBackground = el.style.backgroundImage;
 
-    const ctx = canvas.getContext('2d');
-    let animationFrameId;
-    let time = 0;
-    let approachScale = 0.1; 
-    let isJumpscare = false;
+    setTimeout(()=>{
 
-    // 3. Animation loop
-    function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        time += 0.1; 
+        // visual corruption
+        el.style.backgroundImage = 'url("https://files.catbox.moe/dwp6bu.png")';
+        el.style.backgroundSize = "contain";
+        bonzi.hatLayer.style.display = "none";
 
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
+        el.style.transformOrigin = "center bottom";
+        el.style.filter = "contrast(1.3) saturate(1.4)";
 
-        let currentScale = approachScale;
-        let shakeIntensity = 0;
-        let finalX = cx;
-        let finalY = cy;
+        // cursed audio
+        const ctx = new (window.AudioContext||window.webkitAudioContext)();
 
-        if (!isJumpscare) {
-            // --- STANDARD CREEPY APPROACH ---
-            if (approachScale < 2.0) {
-                approachScale += 0.015 + (approachScale * 0.01); 
-            }
-            
-            shakeIntensity = Math.pow(approachScale, 2) * 18;
-            const bopSpeed = time * 3; 
-            const bopY = Math.sin(bopSpeed) * 15;
-            const twitch = Math.random() > 0.96 ? (Math.random() - 0.5) * 30 : 0;
+        const o1 = ctx.createOscillator();
+        const o2 = ctx.createOscillator();
+        const g = ctx.createGain();
 
-            finalX = cx + ((Math.random() - 0.5) * shakeIntensity) + twitch;
-            finalY = cy + bopY + ((Math.random() - 0.5) * shakeIntensity) + twitch;
-        } else {
-            // --- JUMPSCARE MODE ---
-            currentScale = 4.5; 
-            shakeIntensity = 90; 
-            finalX = cx + (Math.random() - 0.5) * shakeIntensity;
-            finalY = cy + (Math.random() - 0.5) * shakeIntensity;
-        }
+        o1.type = "sawtooth";
+        o2.type = "square";
 
-        ctx.save();
-        
-        // Apply zoom
-        ctx.translate(cx, cy);
-        ctx.scale(currentScale, currentScale);
-        ctx.translate(-cx, -cy);
+        o1.frequency.value = 55;
+        o2.frequency.value = 57;
 
-        // --- FLASHING BACKGROUND / DIGITAL GLITCH ---
-        const isGlitched = Math.random() > (isJumpscare ? 0.3 : 0.97); 
-        if (isGlitched) {
-            ctx.fillStyle = isJumpscare ? 'rgba(120, 0, 0, 0.5)' : 'rgba(40, 40, 40, 0.3)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        g.gain.value = 0.06;
 
-        // --- THE BLACK BODY BASE ---
-        ctx.beginPath();
-        const headWarpX = isJumpscare ? 0 : Math.sin(time * 2) * 10;
-        const headWarpY = isJumpscare ? 0 : Math.cos(time * 1.5) * 15;
-        ctx.ellipse(finalX + headWarpX, finalY + headWarpY, 110, 160, Math.sin(time * 0.5) * 0.15, 0, Math.PI * 2);
-        
-        // Body color is now pure abyssal black, or static grey during glitches
-        ctx.fillStyle = isGlitched ? '#1a1a1a' : '#000000'; 
-        ctx.fill();
-        ctx.lineWidth = 5;
-        // Outline slightly lighter so the shape remains visible against dark backgrounds
-        ctx.strokeStyle = '#1c1c1c';
-        ctx.stroke();
+        o1.connect(g);
+        o2.connect(g);
+        g.connect(ctx.destination);
 
-        // --- THE EYE SOCKETS (Empty voids, no eyeballs/pupils) ---
-        // Left Eye Socket - Void hole that stretches abnormally
-        const leftEyeWarp = isJumpscare ? 25 : Math.sin(time * 4) * 5;
-        ctx.beginPath();
-        ctx.ellipse(finalX - 45, finalY - 40, 20, 35 + leftEyeWarp, -0.1, 0, Math.PI * 2);
-        ctx.fillStyle = isGlitched ? '#220000' : '#0d0d0d';
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#3a0000';
-        ctx.stroke();
+        o1.start();
+        o2.start();
 
-        // Right Eye Socket - Wide, hollow, trembling pit
-        const rightEyeWarp = (isJumpscare ? 30 : Math.cos(time * 3) * 6);
-        ctx.beginPath();
-        ctx.ellipse(finalX + 45, finalY - 35, 25 + rightEyeWarp, 25 + rightEyeWarp, 0.1, 0, Math.PI * 2);
-        ctx.fillStyle = isGlitched ? '#220000' : '#0d0d0d';
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#3a0000';
-        ctx.stroke();
+        const buzzIv = setInterval(()=>{
+            o1.frequency.value = 35 + Math.random()*80;
+            o2.frequency.value = 40 + Math.random()*90;
 
-        // --- THE MOUTH (Massive Abyss) ---
-        const mouthStretch = isJumpscare ? 130 : Math.min(approachScale * 25, 60);
-        const mouthWarp = isJumpscare ? (Math.random() - 0.5) * 20 : Math.abs(Math.sin(time * 5)) * 15;
-        
-        ctx.beginPath();
-        ctx.ellipse(finalX, finalY + 60, 30 + mouthWarp, 35 + mouthStretch, 0, 0, Math.PI * 2);
-        ctx.fillStyle = isGlitched ? '#110000' : '#050505'; 
-        ctx.fill();
-        
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = isGlitched ? '#ffffff' : '#2a0000';
-        ctx.stroke();
+            g.gain.value = 0.02 + Math.random()*0.1;
+        },80);
 
-        ctx.restore();
 
-        animationFrameId = requestAnimationFrame(animate);
-    }
+        // impossible growth
+        let t = 0;
+        let height = 1;
+        let width = 1;
+        let growth = 0.008;
 
-    // 4. Trigger Jumpscare for 3 seconds when the audio ends
-    audio.onended = function() {
-        isJumpscare = true; 
+        const animIv = setInterval(()=>{
 
-        setTimeout(() => {
-            cancelAnimationFrame(animationFrameId);
-            canvas.remove(); 
-            audio.remove(); 
-        }, 3000);
-    };
+            t += 0.15;
 
-    // 5. Start sequence
-    animate();
-    audio.play().catch(err => {
-        console.error("Audio playback failed. Click on the page first to allow audio to play!", err);
-    });
+            // exponential cursed stretching
+            height += growth;
+            growth += 0.00008;
+
+            // random mutation spikes
+            const panic = Math.random() < 0.08
+                ? (Math.random()*0.5+0.5)
+                : 1;
+
+            // jittering movement
+            const jitterX =
+                Math.sin(t*7) * (height*2) +
+                (Math.random()-0.5)*15;
+
+            const jitterY =
+                Math.cos(t*5) * (height*1.5);
+
+
+            // becomes impossibly thin
+            width = Math.max(
+                0.25,
+                1 / Math.sqrt(height)
+            );
+
+
+            // bending reality
+            const bend =
+                Math.sin(t*1.7) *
+                Math.min(height*3,35);
+
+
+            // RGB nightmare
+            const hue = (t*40)%360;
+
+            el.style.filter = `
+                contrast(1.5)
+                saturate(2)
+                hue-rotate(${hue}deg)
+                drop-shadow(
+                    ${Math.sin(t)*10}px
+                    0
+                    8px
+                    rgba(255,0,255,.7)
+                )
+            `;
+
+
+            el.style.transform = `
+                translate(
+                    ${jitterX}px,
+                    ${jitterY}px
+                )
+                scaleY(${height * panic})
+                scaleX(${width})
+                rotate(${bend}deg)
+                skew(${Math.sin(t*3)*20}deg)
+            `;
+
+
+            // audio gets lower as Bonzi ascends
+            o1.frequency.value =
+                40 + Math.sin(t)*20 - height*2;
+
+            o2.frequency.value =
+                45 + Math.cos(t)*25 - height*1.5;
+
+
+        },50);
+
+
+
+        // after 8 seconds: collapse
+        setTimeout(()=>{
+
+            clearInterval(animIv);
+            clearInterval(buzzIv);
+
+            o1.stop();
+            o2.stop();
+
+            ctx.close();
+
+
+            // dramatic implosion
+            el.animate([
+                {
+                    transform: el.style.transform,
+                    filter: el.style.filter
+                },
+                {
+                    transform: `
+                        scaleY(0.1)
+                        scaleX(5)
+                        rotate(720deg)
+                    `,
+                    filter:
+                        "blur(20px) contrast(5)"
+                }
+            ],{
+                duration:1500,
+                easing:"cubic-bezier(.8,-1,.2,2)"
+            });
+
+
+            setTimeout(()=>{
+
+                el.style.transform =
+                    originalTransform;
+
+                el.style.filter =
+                    originalFilter;
+
+                el.style.transformOrigin =
+                    originalTransformOrigin;
+
+                el.style.backgroundImage =
+                    originalBackground;
+
+                bonzi.updateSprite();
+
+                bonzi.hatLayer.style.display =
+                    originalHatDisplay;
+
+            },1500);
+
+
+        },8000);
+
+
+    },10000);
+}
 })();
